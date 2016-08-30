@@ -21,6 +21,7 @@ public class TaskAdapter extends BaseAdapter {
 
     private LayoutInflater mLayoutInflater;
     private ArrayList<Task> mTaskArrayList;
+    private String mSearchWord;
 
     public TaskAdapter(Context context){
         //LayoutInflaterを使えば動的にレイアウトxmlからViewを生成することが可能
@@ -29,6 +30,10 @@ public class TaskAdapter extends BaseAdapter {
 
     public void setTaskArrayList(ArrayList<Task> taskArrayList){
         mTaskArrayList = taskArrayList;
+    }
+
+    public void setSearchWord(String searchWord){
+        mSearchWord = searchWord;
     }
 
     @Override
@@ -62,6 +67,9 @@ public class TaskAdapter extends BaseAdapter {
         Date date = mTaskArrayList.get(position).getDate();
         textView2.setText(simpleDateFormat.format(date));
 
+
         return convertView;
     }
+
+
 }

@@ -8,8 +8,11 @@ import android.os.Bundle;
 import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
+import android.text.Editable;
+import android.text.TextWatcher;
 import android.view.View;
 import android.widget.AdapterView;
+import android.widget.EditText;
 import android.widget.ListView;
 
 import java.util.ArrayList;
@@ -17,12 +20,17 @@ import java.util.Date;
 
 import io.realm.Realm;
 import io.realm.RealmChangeListener;
+import io.realm.RealmQuery;
 import io.realm.RealmResults;
 import io.realm.Sort;
 
 public class MainActivity extends AppCompatActivity {
 
     public final static String EXTRA_TASK = "jp.techacademy.yoshihiro.minagawa.taskapp.TASK";
+
+    private ListView mListView;
+    private EditText mEditText;
+    private TaskAdapter mTaskAdapter;
 
     private Realm mRealm;
     //RealmResultsはデータベースから取得した結果を保持する変数
@@ -31,12 +39,10 @@ public class MainActivity extends AppCompatActivity {
     private RealmChangeListener mRealmChangeListener = new RealmChangeListener() {
         @Override
         public void onChange() {
+            filterList(mEditText.getText().toString());
             reloadListView();
         }
     };
-
-    private ListView mListView;
-    private TaskAdapter mTaskAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -60,6 +66,7 @@ public class MainActivity extends AppCompatActivity {
 
         //ListViewの設定
         mTaskAdapter = new TaskAdapter(MainActivity.this);
+        mEditText = (EditText)findViewById(R.id.editText1);
         mListView = (ListView)findViewById(R.id.listView1);
 
         //ListView内のItemをタップしたときの処理
@@ -106,9 +113,6 @@ public class MainActivity extends AppCompatActivity {
                        alarmManager.cancel(resultPendingIntent);
 
                        reloadListView();
-
-
-
                    }
                 });
 
@@ -118,6 +122,26 @@ public class MainActivity extends AppCompatActivity {
 
                 return true;
 
+            }
+        });
+
+        //EditTextにリスナー実装
+        mEditText.addTextChangedListener(new TextWatcher() {
+            @Override
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+
+            }
+
+            @Override
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+                filterList(mEditText.getText().toString());
+                reloadListView();
+            }
+
+            @Override
+            public void afterTextChanged(Editable s) {
+                filterList(mEditText.getText().toString());
+                reloadListView();
             }
         });
 
@@ -132,7 +156,6 @@ public class MainActivity extends AppCompatActivity {
 
     private void reloadListView(){
 
-
         //後でTaskクラスに変更する
         ArrayList<Task> taskArrayList = new ArrayList<>();
 
@@ -141,13 +164,14 @@ public class MainActivity extends AppCompatActivity {
             task.setId(mTaskRealmResults.get(i).getId());
             task.setTitle(mTaskRealmResults.get(i).getTitle());
             task.setContents(mTaskRealmResults.get(i).getContents());
+            task.setCategory((mTaskRealmResults.get(i).getCategory()));
             task.setDate(mTaskRealmResults.get(i).getDate());
 
             taskArrayList.add(task);
         }
 
-
         mTaskAdapter.setTaskArrayList(taskArrayList);
+        mTaskAdapter.setSearchWord(mEditText.getText().toString());
         mListView.setAdapter(mTaskAdapter);
         mTaskAdapter.notifyDataSetChanged();
 
@@ -163,11 +187,28 @@ public class MainActivity extends AppCompatActivity {
         Task task = new Task();
         task.setTitle("作業");
         task.setContents("プログラムを書いてPUSHする");
+        task.setCategory("カテゴリーを入力する");
         task.setDate(new Date());
         task.setId(0);
         mRealm.beginTransaction();
         mRealm.copyToRealmOrUpdate(task);
         mRealm.commitTransaction();
+    }
+
+    private void filterList(String searchWord){
+
+        RealmQuery<Task> realmQuery = mRealm.where(Task.class);
+        if(!searchWord.equals("")) {
+            String[] filterWords = searchWord.split(" ", 0);
+
+
+            for (int i = 0; i < filterWords.length; i++) {
+                realmQuery.contains("category", filterWords[i]);
+            }
+        }
+
+        mTaskRealmResults = realmQuery.findAll();
+
     }
 
 }
