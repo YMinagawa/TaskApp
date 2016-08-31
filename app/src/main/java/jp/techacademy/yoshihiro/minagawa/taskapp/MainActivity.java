@@ -199,11 +199,15 @@ public class MainActivity extends AppCompatActivity {
 
         RealmQuery<Task> realmQuery = mRealm.where(Task.class);
         if(!searchWord.equals("")) {
+            //半角スペースで文字列を分割
             String[] filterWords = searchWord.split(" ", 0);
 
-
             for (int i = 0; i < filterWords.length; i++) {
-                realmQuery.contains("category", filterWords[i]);
+                if(i != 0){
+                    realmQuery.or();
+                }
+
+                realmQuery.equalTo("category", filterWords[i]);
             }
         }
 
